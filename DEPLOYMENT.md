@@ -20,7 +20,7 @@
 ```bash
 cd /home/gooseware/repos/antigravity/quota
 git init
-git remote add origin git@github.com:gooseware/opencode-antigravity-quota.git
+git remote add origin git@github.com:gooseware/antigravity-autopilot.git
 git add .
 git commit -m "feat: initial release - quota management and model rotation"
 git branch -M main
