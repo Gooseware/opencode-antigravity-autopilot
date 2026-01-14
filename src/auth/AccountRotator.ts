@@ -5,7 +5,7 @@ export class AccountRotator {
   private activeIndex: number;
 
   constructor(accounts: AccountMetadataV3[], initialIndex: number) {
-    this.accounts = accounts;
+    this.accounts = [...accounts];
     this.activeIndex = initialIndex;
   }
 

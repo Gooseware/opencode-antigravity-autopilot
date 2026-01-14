@@ -63,4 +63,28 @@ describe('AccountRotator', () => {
       const rotator = new AccountRotator([], 0);
       expect(rotator.getCurrentAccount()).toBeNull();
   });
+
+  it('should handle markCurrentExhausted with empty account list', () => {
+    const rotator = new AccountRotator([], 0);
+    expect(rotator.markCurrentExhausted(1000)).toBe(-1);
+  });
+
+  it('should return first account if all accounts have Infinity cooldown', () => {
+    const accounts = [
+       createAccount('t1', Infinity), 
+       createAccount('t2', Infinity)
+    ];
+    
+    const rotator = new AccountRotator(accounts, 1);
+    expect(rotator.getCurrentAccount()?.refreshToken).toBe('t2');
+  });
+
+  it('should not be affected by external modification of accounts array', () => {
+      const accounts = [createAccount('t1')];
+      const rotator = new AccountRotator(accounts, 0);
+      
+      accounts.pop();
+      
+      expect(rotator.getCurrentAccount()?.refreshToken).toBe('t1');
+  });
 });
