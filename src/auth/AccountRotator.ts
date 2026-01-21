@@ -4,10 +4,14 @@ import * as path from 'path';
 import * as os from 'os';
 
 export class AccountRotator {
-  private accounts: AccountMetadataV3[];
-  private activeIndex: number;
+  private accounts!: AccountMetadataV3[];
+  private activeIndex!: number;
 
   constructor(accounts: AccountMetadataV3[], initialIndex: number) {
+    if (!(this instanceof AccountRotator)) {
+      // @ts-ignore
+      return new AccountRotator(accounts, initialIndex);
+    }
     this.accounts = [...accounts];
     this.activeIndex = initialIndex;
   }

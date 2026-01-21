@@ -2,6 +2,13 @@ import { spawn } from 'child_process';
 import * as readline from 'readline';
 
 export class LSPFinder {
+  constructor() {
+    if (!(this instanceof LSPFinder)) {
+      // @ts-ignore
+      return new LSPFinder();
+    }
+  }
+
   findProcess(): Promise<{ pid: number, csrfToken: string, port: number } | null> {
     return new Promise((resolve) => {
       const ps = spawn('ps', ['aux']);

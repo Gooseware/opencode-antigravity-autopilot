@@ -17,10 +17,16 @@ export interface AccountStorageV3 {
 }
 
 export class TokenStorageReader {
-  private accounts: AccountMetadataV3[] = [];
-  private activeIndex: number = -1;
+  private accounts!: AccountMetadataV3[];
+  private activeIndex!: number;
 
   constructor() {
+    if (!(this instanceof TokenStorageReader)) {
+      // @ts-ignore
+      return new TokenStorageReader();
+    }
+    this.accounts = [];
+    this.activeIndex = -1;
     this.load();
   }
 
@@ -34,7 +40,7 @@ export class TokenStorageReader {
 
   private load(): void {
     const storagePath = this.getStoragePath();
-    
+
     if (!fs.existsSync(storagePath)) {
       console.warn(`Token storage file not found at ${storagePath}`);
       return;
@@ -61,9 +67,9 @@ export class TokenStorageReader {
   private getStoragePath(): string {
     const xdgConfigHome = process.env.XDG_CONFIG_HOME;
     if (xdgConfigHome) {
-        return path.join(xdgConfigHome, 'opencode', 'antigravity-accounts.json');
+      return path.join(xdgConfigHome, 'opencode', 'antigravity-accounts.json');
     }
-    
+
     const homeDir = os.homedir();
     return path.join(homeDir, '.config', 'opencode', 'antigravity-accounts.json');
   }

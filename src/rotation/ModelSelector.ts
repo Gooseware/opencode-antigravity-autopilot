@@ -2,10 +2,14 @@ import { QuotaTracker } from './QuotaTracker';
 import { ModelRotationStrategy } from '../types';
 
 export class ModelSelector {
-  private quotaTracker: QuotaTracker;
-  private strategy: ModelRotationStrategy;
+  private quotaTracker!: QuotaTracker;
+  private strategy!: ModelRotationStrategy;
 
   constructor(quotaTracker: QuotaTracker, strategy: ModelRotationStrategy) {
+    if (!(this instanceof ModelSelector)) {
+      // @ts-ignore
+      return new ModelSelector(quotaTracker, strategy);
+    }
     this.quotaTracker = quotaTracker;
     this.strategy = strategy;
   }

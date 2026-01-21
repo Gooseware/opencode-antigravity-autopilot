@@ -1,6 +1,6 @@
 {
   "name": "opencode-antigravity-autopilot",
-  "version": "1.0.0",
+  "version": "1.0.6",
   "description": "Intelligent model rotation and quota orchestration for opencode-antigravity-auth",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

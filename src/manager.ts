@@ -7,15 +7,21 @@ import { ModelSelector } from './rotation/ModelSelector';
 import { PluginConfig, ModelRotationStrategy } from './types';
 
 export class QuotaManager {
-  private tokenReader: TokenStorageReader;
-  private rotator: AccountRotator;
-  private lspFinder: LSPFinder;
-  private poller: QuotaPoller;
-  private quotaTracker: QuotaTracker;
-  private modelSelector: ModelSelector | null = null;
-  private lspProcess: { pid: number; csrfToken: string; port: number } | null = null;
+  private tokenReader!: TokenStorageReader;
+  private rotator!: AccountRotator;
+  private lspFinder!: LSPFinder;
+  private poller!: QuotaPoller;
+  private quotaTracker!: QuotaTracker;
+  private modelSelector!: ModelSelector | null;
+  private lspProcess!: { pid: number; csrfToken: string; port: number } | null;
 
   constructor(config?: PluginConfig) {
+    if (!(this instanceof QuotaManager)) {
+      // @ts-ignore
+      return new QuotaManager(config);
+    }
+    this.modelSelector = null;
+    this.lspProcess = null;
     this.tokenReader = new TokenStorageReader();
     const accounts = this.tokenReader.getAccounts();
     const activeIndex = this.tokenReader.getActiveIndex();

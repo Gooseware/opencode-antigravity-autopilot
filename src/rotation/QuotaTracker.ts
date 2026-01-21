@@ -1,10 +1,15 @@
 import { QuotaInfo, ModelQuotaState } from '../types';
 
 export class QuotaTracker {
-  private quotaState: Map<string, ModelQuotaState> = new Map();
-  private readonly quotaThreshold: number;
+  private quotaState!: Map<string, ModelQuotaState>;
+  private quotaThreshold!: number;
 
   constructor(quotaThreshold: number = 0.2) {
+    if (!(this instanceof QuotaTracker)) {
+      // @ts-ignore
+      return new QuotaTracker(quotaThreshold);
+    }
+    this.quotaState = new Map();
     this.quotaThreshold = quotaThreshold;
   }
 
