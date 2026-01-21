@@ -14,7 +14,11 @@ export function createOhMyOpenCodeIntegration(
       const targetModel = preferredModel || config?.defaultModel;
 
       if (!targetModel) {
-        const selected = quotaManager.selectBestModel();
+        let selected = quotaManager.selectBestModel();
+        if (!selected) {
+          await quotaManager.rotateAccount();
+          selected = quotaManager.selectBestModel();
+        }
         return selected || 'google/antigravity-gemini-3-flash';
       }
 
@@ -22,7 +26,11 @@ export function createOhMyOpenCodeIntegration(
 
       if (quotaState && quotaState.quotaFraction < 0.2) {
         const fallback = quotaManager.selectBestModel();
-        return fallback || targetModel;
+        if (!fallback) {
+          await quotaManager.rotateAccount();
+          return targetModel;
+        }
+        return fallback;
       }
 
       return targetModel;

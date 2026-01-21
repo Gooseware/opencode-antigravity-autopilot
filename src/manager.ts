@@ -67,6 +67,7 @@ export class QuotaManager {
 
   async rotateAccount(): Promise<void> {
     this.rotator.markCurrentExhausted();
+    this.quotaTracker.clearAll();
   }
 
   selectBestModel(): string | null {

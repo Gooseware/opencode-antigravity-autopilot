@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Implement `opencode-antigravity-quota` plugin to provide real-time quota telemetry and manage account rotation using existing authenticated sessions from `opencode-antigravity-auth`.
+**Goal:** Implement `opencode-antigravity-autopilot` plugin to provide real-time quota telemetry and manage account rotation using existing authenticated sessions from `opencode-antigravity-auth`.
 
 **Architecture:** A Node.js based plugin. It reads tokens from the existing `opencode-antigravity-auth` storage (V3 schema), implements "Passive" quota acquisition via LSP sniffing, "Active" via header inspection, and an Account Rotation "Load Balancer" to switch accounts upon exhaustion.
 

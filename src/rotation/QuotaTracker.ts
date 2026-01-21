@@ -63,4 +63,8 @@ export class QuotaTracker {
       }
     }
   }
+
+  clearAll(): void {
+    this.quotaState.clear();
+  }
 }
