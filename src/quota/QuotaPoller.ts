@@ -2,7 +2,8 @@ import axios from 'axios';
 
 export interface QuotaInfo {
     remainingFraction: number;
-    resetTime: string;
+    resetTime?: string;
+    model?: string;
 }
 
 export class QuotaPoller {

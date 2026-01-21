@@ -1,0 +1,46 @@
+# NPM Ignore
+
+# Source files
+src/
+tests/
+*.test.ts
+*.test.js
+
+# Config files
+tsconfig.json
+tsconfig.build.json
+jest.config.js
+.eslintrc.js
+.prettierrc
+
+# Development
+node_modules/
+*.log
+npm-debug.log*
+.DS_Store
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Documentation (keep README, LICENSE, CHANGELOG)
+docs/
+*.old.md
+INSTALL.md
+SUMMARY.md
+
+# Build artifacts (keep dist/)
+*.tsbuildinfo
+coverage/
+
+# Test files
+__tests__/
+test/
+*.spec.ts
+*.spec.js

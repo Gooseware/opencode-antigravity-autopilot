@@ -12,6 +12,7 @@ export interface AccountMetadataV3 {
   coolingDownUntil?: number;
   projectId?: string;
   managedProjectId?: string;
+  rateLimitResetTimes?: Record<string, number>;
 }
 
 export interface AccountStorageV3 {

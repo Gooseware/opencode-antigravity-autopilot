@@ -2,6 +2,7 @@ import { TokenStorageReader } from './auth/TokenStorageReader';
 import { AccountRotator } from './auth/AccountRotator';
 import { LSPFinder } from './quota/LSPFinder';
 import { QuotaPoller, QuotaInfo } from './quota/QuotaPoller';
+import { ApiQuotaPoller } from './quota/ApiQuotaPoller';
 import { QuotaTracker } from './rotation/QuotaTracker';
 import { ModelSelector } from './rotation/ModelSelector';
 import { PluginConfig, ModelRotationStrategy } from './types';
@@ -11,6 +12,7 @@ export class QuotaManager {
   private rotator!: AccountRotator;
   private lspFinder!: LSPFinder;
   private poller!: QuotaPoller;
+  private apiPoller!: ApiQuotaPoller;
   private quotaTracker!: QuotaTracker;
   private modelSelector!: ModelSelector | null;
   private lspProcess!: { pid: number; csrfToken: string; port: number } | null;
@@ -29,6 +31,7 @@ export class QuotaManager {
     this.rotator = new AccountRotator(accounts, activeIndex);
     this.lspFinder = new LSPFinder();
     this.poller = new QuotaPoller();
+    this.apiPoller = new ApiQuotaPoller();
     this.quotaTracker = new QuotaTracker(config?.quotaThreshold || 0.2);
 
     if (config?.preferredModels) {
@@ -69,6 +72,28 @@ export class QuotaManager {
     }
 
     return quota;
+  }
+
+  async getQuotaViaApi(modelName?: string): Promise<QuotaInfo | null> {
+    const account = this.rotator.getCurrentAccount();
+    if (!account) return null;
+
+    if (modelName) {
+      return await this.apiPoller.checkQuotaForModel(account, modelName);
+    }
+
+    const quotas = await this.apiPoller.getAllQuotas(account);
+    if (quotas.size === 0) return null;
+
+    const firstQuota = quotas.values().next().value;
+    return firstQuota || null;
+  }
+
+  async getAllQuotasViaApi(): Promise<Map<string, QuotaInfo>> {
+    const account = this.rotator.getCurrentAccount();
+    if (!account) return new Map();
+
+    return await this.apiPoller.getAllQuotas(account);
   }
 
   async rotateAccount(): Promise<void> {

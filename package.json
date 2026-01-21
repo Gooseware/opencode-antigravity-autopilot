@@ -1,7 +1,7 @@
 {
   "name": "opencode-antigravity-autopilot",
-  "version": "1.0.6",
-  "description": "Intelligent model rotation and quota orchestration for opencode-antigravity-auth",
+  "version": "2.0.0",
+  "description": "Intelligent quota monitoring and model auto-switching for OpenCode with Antigravity. Plugin-based, zero source modifications required.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "module",
@@ -40,10 +40,14 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "prepublishOnly": "npm run build"
+    "test:quota": "node scripts/test-hard-limit.js",
+    "service:start": "node scripts/start-quota-service.js",
+    "prepublishOnly": "npm run build && npm run typecheck"
   },
   "dependencies": {
-    "axios": "^1.13.2"
+    "@opencode-ai/plugin": "file:../opencode/packages/plugin",
+    "axios": "^1.13.2",
+    "opencode-antigravity-quota": "file:../opencode-antigravity-quota"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
