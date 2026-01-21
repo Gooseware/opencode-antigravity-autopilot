@@ -101,10 +101,18 @@ ${statusIcon} **Current Model:** ${currentQuota.model || 'unknown'}
     },
 
     quota_rotate_account: {
-      description: 'Manually rotate to the next available account when current is exhausted.',
+      description: 'Manually rotate to the next available account when current is exhausted. Optionally provide resetTimeISO for accurate cooldown.',
       args: {},
-      async execute(args?: any, ctx?: any) {
-        await manager.rotateAccount();
+      async execute(args?: { resetTimeISO?: string }, ctx?: any) {
+        await manager.rotateAccount(args?.resetTimeISO);
+        
+        if (args?.resetTimeISO) {
+          const resetDate = new Date(args.resetTimeISO);
+          const now = new Date();
+          const minutesUntilReset = Math.round((resetDate.getTime() - now.getTime()) / (60 * 1000));
+          return `✓ Rotated to next account. Previous account will be available again at ${resetDate.toISOString()} (~${minutesUntilReset} minutes).`;
+        }
+        
         return `✓ Rotated to next account. Previous account marked as exhausted for 30 minutes.`;
       },
     },

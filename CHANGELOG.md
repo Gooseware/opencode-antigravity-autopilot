@@ -48,6 +48,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Hard limit detection now works reliably with API data
 - Model switching triggers correctly on quota exhaustion
 - Account rotation properly marks exhausted accounts
+- **Accurate quota reset time tracking** - Uses actual API reset times instead of hardcoded 30-minute cooldowns
+  - `AccountRotator.markCurrentExhausted()` accepts `resetTimeISO` parameter
+  - `HardLimitDetector` passes API reset time to rotator
+  - `QuotaManager.rotateAccount()` supports reset time propagation
+  - Account cooldowns now match Google's actual quota reset schedule
 
 ## [1.0.6] - 2026-01-14
 

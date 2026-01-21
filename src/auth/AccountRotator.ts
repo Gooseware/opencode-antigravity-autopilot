@@ -53,13 +53,23 @@ export class AccountRotator {
     return this.accounts[this.activeIndex];
   }
 
-  public markCurrentExhausted(cooldownMs: number = 30 * 60 * 1000): number {
+  public markCurrentExhausted(cooldownMs?: number, resetTimeISO?: string): number {
     if (this.accounts.length === 0) {
       return -1;
     }
 
     const currentAccount = this.accounts[this.activeIndex];
-    currentAccount.coolingDownUntil = Date.now() + cooldownMs;
+    
+    if (resetTimeISO) {
+      const resetTime = new Date(resetTimeISO);
+      if (!Number.isNaN(resetTime.getTime())) {
+        currentAccount.coolingDownUntil = resetTime.getTime();
+      } else {
+        currentAccount.coolingDownUntil = Date.now() + (cooldownMs || 30 * 60 * 1000);
+      }
+    } else {
+      currentAccount.coolingDownUntil = Date.now() + (cooldownMs || 30 * 60 * 1000);
+    }
 
     this.activeIndex = (this.activeIndex + 1) % this.accounts.length;
 

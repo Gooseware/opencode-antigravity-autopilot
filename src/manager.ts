@@ -96,8 +96,8 @@ export class QuotaManager {
     return await this.apiPoller.getAllQuotas(account);
   }
 
-  async rotateAccount(): Promise<void> {
-    this.rotator.markCurrentExhausted();
+  async rotateAccount(resetTimeISO?: string): Promise<void> {
+    this.rotator.markCurrentExhausted(undefined, resetTimeISO);
     this.quotaTracker.clearAll();
   }
 

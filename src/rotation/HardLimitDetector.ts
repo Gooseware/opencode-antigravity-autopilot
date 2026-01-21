@@ -72,7 +72,7 @@ export class HardLimitDetector {
       const nextModel = this.modelSelector?.selectModel();
       
       if (!nextModel) {
-        this.rotator.markCurrentExhausted();
+        this.rotator.markCurrentExhausted(undefined, quota.resetTime);
         
         return {
           isExhausted: true,
