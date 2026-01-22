@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-01-22
+
+### Added
+- **lastSelectedModel Tracking** - QuotaManager now remembers and reports on the active model
+- **Improved Quota UX** - Overhauled `quota_status` tool with filtered model lists and clean formatting
+- **Standardized Health Thresholds** - Green ≥ 50%, Yellow 20-49%, Red < 20%
+
+### Fixed
+- **Authentication 401 error** - Fixed token refresh logic with automatic account rotation
+- **API 404 error** - Corrected CloudCode API endpoint URL
+- **Polling Spam** - Enforced 5-minute minimum interval and fixed context issues in poller loop
+- **Runtime Crashes** - Moved property initializers to prevent 'undefined this' errors
+
+
 ## [2.0.1] - 2026-01-22
 
 ### Fixed
