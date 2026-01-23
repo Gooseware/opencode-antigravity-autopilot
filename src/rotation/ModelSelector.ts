@@ -14,12 +14,12 @@ export class ModelSelector {
     }
     this.logger = getLogger();
     this.quotaTracker = quotaTracker;
-    this.strategy = strategy;
+    this.strategy = strategy || { preferredModels: [], fallbackModels: [], quotaThreshold: 0.02 };
 
     this.logger.info('ModelSelector', 'Initialized', {
-      preferredModelsCount: strategy.preferredModels.length,
-      fallbackModelsCount: strategy.fallbackModels.length,
-      quotaThreshold: strategy.quotaThreshold,
+      preferredModelsCount: this.strategy.preferredModels?.length ?? 0,
+      fallbackModelsCount: this.strategy.fallbackModels?.length ?? 0,
+      quotaThreshold: this.strategy.quotaThreshold,
     });
   }
 
