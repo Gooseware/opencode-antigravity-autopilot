@@ -32,7 +32,7 @@ export class AutopilotLogger {
     const filename = options?.filename || `autopilot-${this.getDateString()}.log`;
     this.logFilePath = path.join(logDir, filename);
     this.enabled = options?.enabled ?? true;
-    this.minLevel = options?.minLevel || 'debug';
+    this.minLevel = options?.minLevel || 'info';
 
     if (this.enabled) {
       this.ensureLogDirectory();
@@ -57,7 +57,7 @@ export class AutopilotLogger {
       const dir = path.dirname(this.logFilePath);
       const files = fs.readdirSync(dir);
       const autopilotLogs = files.filter(f => f.startsWith('autopilot-') && f.endsWith('.log'));
-      
+
       const now = Date.now();
       const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
 
@@ -69,7 +69,7 @@ export class AutopilotLogger {
         }
       }
     } catch (error) {
-      
+
     }
   }
 
@@ -89,12 +89,8 @@ export class AutopilotLogger {
     try {
       const formatted = this.formatLogEntry(entry);
       fs.appendFileSync(this.logFilePath, formatted, 'utf-8');
-      
-      const consoleMethod = entry.level === 'error' ? console.error : 
-                          entry.level === 'warn' ? console.warn : console.log;
-      consoleMethod(`[AUTOPILOT] ${formatted.trim()}`);
     } catch (error) {
-      console.error('Failed to write log:', error);
+      // Silently fail - don't use console
     }
   }
 

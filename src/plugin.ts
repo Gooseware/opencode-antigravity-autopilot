@@ -47,14 +47,34 @@ function tool(def: ToolDefinition): ToolDefinition {
   return def;
 }
 
+import os from 'os';
+import path from 'path';
+
+// Load config from ~/.config/opencode/quota.json
+function loadQuotaConfig(): Partial<PluginConfig> {
+  try {
+    const configPath = path.join(os.homedir(), '.config', 'opencode', 'quota.json');
+    if (fs.existsSync(configPath)) {
+      const content = fs.readFileSync(configPath, 'utf-8');
+      const config = JSON.parse(content);
+      logToFile(`Loaded quota config: ${JSON.stringify(config)}`);
+      return config;
+    }
+  } catch (error) {
+    logToFile(`Failed to load quota config: ${error}`);
+  }
+  return {};
+}
+
 export const plugin: Plugin = async (ctx) => {
-  const manager = new QuotaManager();
+  const userConfig = loadQuotaConfig();
+  const manager = new QuotaManager(userConfig);
   await manager.initialize();
 
   const cacheUpdater = new QuotaCacheUpdater(manager, IDLE_POLL_INTERVAL_MS);
   cacheUpdater.start();
 
-  logToFile('Autopilot plugin initialized');
+  logToFile('Autopilot plugin initialized with config');
 
   return {
     // Event hook - listen for session.idle to trigger quota refresh
@@ -62,6 +82,40 @@ export const plugin: Plugin = async (ctx) => {
       if (event.type === 'session.idle') {
         logToFile('Session idle detected - refreshing quota');
         await cacheUpdater.onQueryCompleted();
+
+        // Show notification with quota stats
+        try {
+          const quota = await manager.getQuotaViaApi(); // Gets last used model or global
+          if (quota) {
+            const percentage = Math.round(quota.remainingFraction * 100);
+            const statusIcon = percentage <= 10 ? '🔴' : percentage <= 25 ? '🟡' : '🟢';
+            const threshold = (userConfig.quotaThreshold || 0.02) * 100;
+
+            let message = `${statusIcon} Quota: ${percentage}% (Cutoff: ${threshold}%)`;
+
+            if (quota.resetTime) {
+              const resetDate = new Date(quota.resetTime);
+              const now = new Date();
+              const diffMs = resetDate.getTime() - now.getTime();
+              if (diffMs > 0) {
+                const minutesLeft = Math.ceil(diffMs / 60000);
+                const hours = Math.floor(minutesLeft / 60);
+                const mins = minutesLeft % 60;
+                message += ` | Reset in: ${hours}h ${mins}m`;
+              }
+            }
+
+            await ctx.client.tui.showToast({
+              body: {
+                title: `Quota: ${quota.model || 'Unknown'}`,
+                message,
+                variant: percentage <= 10 ? 'critical' : 'info'
+              }
+            });
+          }
+        } catch (err) {
+          logToFile(`Failed to show quota toast: ${err}`);
+        }
       }
     },
 

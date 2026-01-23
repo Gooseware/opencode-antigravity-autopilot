@@ -9,6 +9,8 @@ import { PluginConfig, ModelRotationStrategy } from './types';
 import { writeQuotaToCache } from './quota/QuotaCacheUpdater';
 import { getLogger } from './utils/logger';
 
+const MIN_POLL_INTERVAL_MS = 60 * 1000; // Minimum 60 seconds between API calls
+
 export class QuotaManager {
   private tokenReader!: TokenStorageReader;
   private rotator!: AccountRotator;
@@ -21,12 +23,25 @@ export class QuotaManager {
   private lastSelectedModel!: string | null;
   private logger!: ReturnType<typeof getLogger>;
 
+  // Rate limiting cache
+  private lastAllQuotasFetch!: number;
+  private cachedAllQuotas!: Map<string, QuotaInfo> | null;
+  private lastSingleQuotaFetch!: number;
+  private cachedSingleQuota!: QuotaInfo | null;
+
   constructor(config?: PluginConfig) {
     if (!(this instanceof QuotaManager)) {
       // @ts-ignore
       return new QuotaManager(config);
     }
     this.logger = getLogger();
+
+    // Initialize cache
+    this.lastAllQuotasFetch = 0;
+    this.cachedAllQuotas = null;
+    this.lastSingleQuotaFetch = 0;
+    this.cachedSingleQuota = null;
+
     this.lastSelectedModel = null;
     this.modelSelector = null;
     this.lspProcess = null;
@@ -88,6 +103,13 @@ export class QuotaManager {
   }
 
   async getQuotaViaApi(modelName?: string, retries = 3): Promise<QuotaInfo | null> {
+    const now = Date.now();
+
+    // Rate limiting: return cached result if called too soon
+    if (this.cachedSingleQuota && (now - this.lastSingleQuotaFetch) < MIN_POLL_INTERVAL_MS) {
+      return this.cachedSingleQuota;
+    }
+
     const account = this.rotator.getCurrentAccount();
     if (!account) {
       this.logger.warn('QuotaManager', 'No account available for quota fetch');
@@ -118,6 +140,8 @@ export class QuotaManager {
       }
 
       if (result) {
+        this.lastSingleQuotaFetch = Date.now();
+        this.cachedSingleQuota = result;
         this.logger.info('QuotaManager', 'Quota fetched successfully', {
           model: result.model,
           remainingFraction: result.remainingFraction,
@@ -139,6 +163,13 @@ export class QuotaManager {
   }
 
   async getAllQuotasViaApi(retries = 3): Promise<Map<string, QuotaInfo>> {
+    const now = Date.now();
+
+    // Rate limiting: return cached result if called too soon
+    if (this.cachedAllQuotas && (now - this.lastAllQuotasFetch) < MIN_POLL_INTERVAL_MS) {
+      return this.cachedAllQuotas;
+    }
+
     const account = this.rotator.getCurrentAccount();
     if (!account) {
       this.logger.warn('QuotaManager', 'No account available for getAllQuotas');
@@ -152,6 +183,9 @@ export class QuotaManager {
 
     try {
       const quotas = await this.apiPoller.getAllQuotas(account);
+
+      this.lastAllQuotasFetch = Date.now();
+      this.cachedAllQuotas = quotas;
 
       this.logger.info('QuotaManager', 'All quotas fetched successfully', {
         modelsCount: quotas.size,
