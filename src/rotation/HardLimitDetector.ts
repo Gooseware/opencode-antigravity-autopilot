@@ -20,7 +20,7 @@ export class HardLimitDetector {
   private quotaTracker!: QuotaTracker;
   private modelSelector!: ModelSelector | null;
   private quotaThreshold!: number;
-  private logger = getLogger();
+  private logger!: ReturnType<typeof getLogger>;
 
   constructor(config?: PluginConfig) {
     if (!(this instanceof HardLimitDetector)) {
@@ -28,6 +28,7 @@ export class HardLimitDetector {
       return new HardLimitDetector(config);
     }
 
+    this.logger = getLogger();
     this.tokenReader = new TokenStorageReader();
     const accounts = this.tokenReader.getAccounts();
     const activeIndex = this.tokenReader.getActiveIndex();
@@ -74,7 +75,7 @@ export class HardLimitDetector {
     });
 
     const quota = await this.apiPoller.checkQuotaForModel(account, currentModel);
-    
+
     if (!quota) {
       this.logger.error('HardLimitDetector', 'Failed to fetch quota information', { currentModel });
       return {
@@ -101,13 +102,13 @@ export class HardLimitDetector {
       });
 
       const nextModel = this.modelSelector?.selectModel();
-      
+
       if (!nextModel) {
         this.logger.info('HardLimitDetector', 'No alternative model available, rotating account', {
           currentModel,
         });
         this.rotator.markCurrentExhausted(undefined, quota.resetTime);
-        
+
         return {
           isExhausted: true,
           shouldRotate: true,
@@ -139,7 +140,7 @@ export class HardLimitDetector {
       });
 
       const nextModel = this.modelSelector?.selectModel();
-      
+
       if (nextModel && nextModel !== currentModel) {
         this.logger.info('HardLimitDetector', 'Triggering model switch (below threshold)', {
           fromModel: currentModel,
@@ -187,7 +188,7 @@ export class HardLimitDetector {
     }
 
     const quotas = await this.apiPoller.getAllQuotas(account);
-    
+
     this.logger.info('HardLimitDetector', 'Fetched all quotas', {
       accountEmail: account.email,
       modelsCount: quotas.size,
