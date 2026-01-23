@@ -18,10 +18,20 @@ Zero OpenCode source modifications required - works as a pure plugin!
 
 ## 🚀 Quick Start
 
-### Installation
+### From NPM
 
 ```bash
 npm install opencode-antigravity-autopilot
+```
+
+### From GitHub (Source)
+
+```bash
+git clone https://github.com/Gooseware/opencode-antigravity-autopilot.git
+cd opencode-antigravity-autopilot
+npm install
+npm run build
+npm link
 ```
 
 ### Prerequisites
@@ -32,6 +42,8 @@ npm install opencode-antigravity-autopilot
 
 ### Configuration
 
+#### Plugin Registration
+
 Add to `~/.config/opencode/opencode.json`:
 
 ```json
@@ -40,6 +52,22 @@ Add to `~/.config/opencode/opencode.json`:
     "opencode-antigravity-auth@beta",
     "opencode-antigravity-autopilot"
   ]
+}
+```
+
+#### Quota Configuration
+
+Create `~/.config/opencode/quota.json` to configure thresholds and models:
+
+```json
+{
+  "quotaThreshold": 0.05,
+  "preferredModels": [
+    "gemini-2.0-pro-exp-02-05", // Try this first
+    "claude-3-7-sonnet",         // Then this
+    "gemini-2.0-flash-thinking-exp-01-21"  // Fallback
+  ],
+  "autoRotate": true
 }
 ```
 
