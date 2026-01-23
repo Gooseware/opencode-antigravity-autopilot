@@ -19,13 +19,14 @@ export class QuotaManager {
   private modelSelector!: ModelSelector | null;
   private lspProcess!: { pid: number; csrfToken: string; port: number } | null;
   private lastSelectedModel!: string | null;
-  private logger = getLogger();
+  private logger!: ReturnType<typeof getLogger>;
 
   constructor(config?: PluginConfig) {
     if (!(this instanceof QuotaManager)) {
       // @ts-ignore
       return new QuotaManager(config);
     }
+    this.logger = getLogger();
     this.lastSelectedModel = null;
     this.modelSelector = null;
     this.lspProcess = null;
@@ -151,7 +152,7 @@ export class QuotaManager {
 
     try {
       const quotas = await this.apiPoller.getAllQuotas(account);
-      
+
       this.logger.info('QuotaManager', 'All quotas fetched successfully', {
         modelsCount: quotas.size,
       });
@@ -176,7 +177,7 @@ export class QuotaManager {
     this.logger.info('QuotaManager', 'Rotating account', { resetTimeISO });
     this.rotator.markCurrentExhausted(undefined, resetTimeISO);
     this.quotaTracker.clearAll();
-    
+
     const newAccount = this.rotator.getCurrentAccount();
     this.logger.info('QuotaManager', 'Account rotated', {
       newAccountEmail: newAccount?.email,

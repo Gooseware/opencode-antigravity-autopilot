@@ -4,13 +4,14 @@ import { getLogger } from '../utils/logger';
 export class QuotaTracker {
   private quotaState!: Map<string, ModelQuotaState>;
   private quotaThreshold!: number;
-  private logger = getLogger();
+  private logger!: ReturnType<typeof getLogger>;
 
   constructor(quotaThreshold: number = 0.02) {
     if (!(this instanceof QuotaTracker)) {
       // @ts-ignore
       return new QuotaTracker(quotaThreshold);
     }
+    this.logger = getLogger();
     this.quotaState = new Map();
     this.quotaThreshold = quotaThreshold;
 

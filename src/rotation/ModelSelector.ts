@@ -5,13 +5,14 @@ import { getLogger } from '../utils/logger';
 export class ModelSelector {
   private quotaTracker!: QuotaTracker;
   private strategy!: ModelRotationStrategy;
-  private logger = getLogger();
+  private logger!: ReturnType<typeof getLogger>;
 
   constructor(quotaTracker: QuotaTracker, strategy: ModelRotationStrategy) {
     if (!(this instanceof ModelSelector)) {
       // @ts-ignore
       return new ModelSelector(quotaTracker, strategy);
     }
+    this.logger = getLogger();
     this.quotaTracker = quotaTracker;
     this.strategy = strategy;
 
