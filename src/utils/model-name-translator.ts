@@ -156,8 +156,9 @@ export function getShortModelName(modelName: string): string {
  */
 export function formatModelQuotaForToast(modelName: string, quotaPercentage: number): string {
   const displayName = translateModelName(modelName);
-  const emoji = quotaPercentage <= 2 ? '🔴' : quotaPercentage <= 10 ? '🟡' : '🟢';
-  return `${emoji} ${displayName}: ${quotaPercentage.toFixed(0)}%`;
+  const safePercentage = (typeof quotaPercentage === 'number' && !isNaN(quotaPercentage)) ? quotaPercentage : 0;
+  const emoji = safePercentage <= 2 ? '🔴' : safePercentage <= 10 ? '🟡' : '🟢';
+  return `${emoji} ${displayName}: ${safePercentage.toFixed(0)}%`;
 }
 
 /**
