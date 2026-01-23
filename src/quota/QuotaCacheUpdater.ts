@@ -1,6 +1,4 @@
 import { QuotaManager } from '../manager';
-
-import { QuotaInfo } from '../types';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -9,6 +7,12 @@ interface QuotaCache {
   percentage: number;
   model: string;
   timestamp: number;
+}
+
+const LOG_FILE = '/tmp/autopilot.log';
+function logToFile(message: string): void {
+  const timestamp = new Date().toISOString();
+  fs.appendFileSync(LOG_FILE, `[${timestamp}] [QuotaCacheUpdater] ${message}\n`);
 }
 
 function getQuotaCachePath(): string {
@@ -20,7 +24,7 @@ function getQuotaCachePath(): string {
   return path.join(homeDir, '.config', 'opencode', 'quota-cache.json');
 }
 
-export async function writeQuotaToCache(quota: QuotaInfo): Promise<void> {
+export async function writeQuotaToCache(quota: { remainingFraction: number; model?: string }): Promise<void> {
   try {
     const cache: QuotaCache = {
       percentage: Math.round(quota.remainingFraction * 100),
@@ -35,81 +39,108 @@ export async function writeQuotaToCache(quota: QuotaInfo): Promise<void> {
       fs.mkdirSync(cacheDir, { recursive: true });
     }
 
-    await fs.promises.writeFile(cachePath, JSON.stringify(cache, null, 2), 'utf-8');
-    // console.log('Cache updated via writeQuotaToCache', { model: quota.model, pct: cache.percentage });
+    fs.writeFileSync(cachePath, JSON.stringify(cache, null, 2), 'utf-8');
   } catch (error) {
-    console.warn('Failed to write quota cache', error);
+    logToFile(`Failed to write quota cache: ${error}`);
   }
 }
+
+const DEFAULT_IDLE_POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 export class QuotaCacheUpdater {
   private manager!: QuotaManager;
-  private intervalId!: NodeJS.Timeout | null;
-  private updateIntervalMs!: number;
+  private idleTimeoutId!: NodeJS.Timeout | null;
+  private idlePollIntervalMs!: number;
+  private lastQueryTime!: number;
 
-  constructor(manager: QuotaManager, updateIntervalMs: number = 300000) {
+  constructor(manager: QuotaManager, idlePollIntervalMs: number = DEFAULT_IDLE_POLL_INTERVAL_MS) {
     if (!(this instanceof QuotaCacheUpdater)) {
-      return new (QuotaCacheUpdater as any)(manager, updateIntervalMs);
+      // @ts-ignore
+      return new QuotaCacheUpdater(manager, idlePollIntervalMs);
     }
-    this.intervalId = null;
+    this.idleTimeoutId = null;
     this.manager = manager;
-    // Enforce minimum interval of 5 minutes (300000ms) to prevent spam/throttling
-    // Explicitly check for NaN or invalid values
-    if (!updateIntervalMs || isNaN(updateIntervalMs) || updateIntervalMs < 300000) {
-      this.updateIntervalMs = 300000;
-    } else {
-      this.updateIntervalMs = updateIntervalMs;
-    }
-
-    this.updateCache = this.updateCache.bind(this);
-    this.start = this.start.bind(this);
-    this.stop = this.stop.bind(this);
+    this.idlePollIntervalMs = idlePollIntervalMs;
+    this.lastQueryTime = 0;
   }
 
   async updateCache(): Promise<void> {
-    const interval = this.updateIntervalMs; // Capture here to avoid 'this' context issues in async generator/callbacks
     try {
-      // console.log('QuotaCacheUpdater: method called');
       const quota = await this.manager.getQuotaViaApi();
 
-      if (quota) {
-        await writeQuotaToCache(quota);
+      if (!quota) {
+        return;
       }
+
+      const cache: QuotaCache = {
+        percentage: Math.round(quota.remainingFraction * 100),
+        model: quota.model || 'unknown',
+        timestamp: Date.now(),
+      };
+
+      const cachePath = getQuotaCachePath();
+      const cacheDir = path.dirname(cachePath);
+
+      if (!fs.existsSync(cacheDir)) {
+        fs.mkdirSync(cacheDir, { recursive: true });
+      }
+
+      fs.writeFileSync(cachePath, JSON.stringify(cache, null, 2), 'utf-8');
+      logToFile(`Cache updated: ${cache.percentage}% remaining for ${cache.model}`);
     } catch (error) {
-      console.warn('Failed to update quota cache (poller)', error);
-    } finally {
-      // Schedule next update only after current one finishes
-      // Schedule next update only after current one finishes
-      if (this.intervalId !== null) { // Check null (stopped) instead of truthy
-        this.intervalId = setTimeout(() => {
-          this.updateCache();
-        }, interval);
-      }
+      logToFile(`Failed to update quota cache: ${error}`);
     }
   }
 
-  start(): void {
-    if (this.intervalId) return; // Already started
+  /**
+   * Called after a query is made to refresh quota and reset idle timer.
+   */
+  async onQueryCompleted(): Promise<void> {
+    this.lastQueryTime = Date.now();
+    await this.updateCache();
+    this.resetIdleTimer();
+  }
 
-    // Start strict sequence
-    this.intervalId = setTimeout(() => {
-      this.updateCache();
-    }, 100); // Initial run after short delay
+  /**
+   * Start the updater - polls immediately and sets up idle polling.
+   */
+  start(): void {
+    logToFile('Starting QuotaCacheUpdater');
+    this.lastQueryTime = Date.now();
+    this.updateCache();
+    this.resetIdleTimer();
+  }
+
+  /**
+   * Reset the idle timer. Called after each query.
+   */
+  private resetIdleTimer(): void {
+    if (this.idleTimeoutId) {
+      clearTimeout(this.idleTimeoutId);
+    }
+
+    this.idleTimeoutId = setTimeout(async () => {
+      const timeSinceLastQuery = Date.now() - this.lastQueryTime;
+      logToFile(`Idle poll triggered. Time since last query: ${Math.round(timeSinceLastQuery / 1000)}s`);
+      await this.updateCache();
+      this.resetIdleTimer(); // Schedule next idle poll
+    }, this.idlePollIntervalMs);
   }
 
   stop(): void {
-    if (this.intervalId) {
-      clearTimeout(this.intervalId);
-      this.intervalId = null;
+    if (this.idleTimeoutId) {
+      clearTimeout(this.idleTimeoutId);
+      this.idleTimeoutId = null;
     }
+    logToFile('QuotaCacheUpdater stopped');
   }
 }
 
-export async function startQuotaCacheService(updateIntervalMs: number = 300000): Promise<QuotaCacheUpdater> {
+export async function startQuotaCacheService(idlePollIntervalMs: number = DEFAULT_IDLE_POLL_INTERVAL_MS): Promise<QuotaCacheUpdater> {
   const manager = new QuotaManager();
   await manager.initialize();
 
-  const updater = new QuotaCacheUpdater(manager, updateIntervalMs);
+  const updater = new QuotaCacheUpdater(manager, idlePollIntervalMs);
   updater.start();
 
   return updater;

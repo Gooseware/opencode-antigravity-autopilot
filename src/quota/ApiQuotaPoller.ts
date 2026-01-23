@@ -1,5 +1,11 @@
 import type { AccountMetadataV3 } from '../types';
+import fs from 'fs';
 
+const LOG_FILE = '/tmp/autopilot.log';
+function logToFile(message: string): void {
+  const timestamp = new Date().toISOString();
+  fs.appendFileSync(LOG_FILE, `[${timestamp}] ${message}\n`);
+}
 
 // Import types and utilities from opencode-antigravity-quota
 interface CloudCodeQuotaInfo {
@@ -76,7 +82,6 @@ export class ApiQuotaPoller {
   }
 
   private async refreshAccessToken(refreshToken: string): Promise<string> {
-    // console.log('refreshAccessToken: Starting');
     const params = new URLSearchParams({
       client_id: ANTIGRAVITY_CLIENT_ID,
       client_secret: ANTIGRAVITY_CLIENT_SECRET,
@@ -96,7 +101,7 @@ export class ApiQuotaPoller {
       });
 
       if (!response.ok) {
-        console.warn(`refreshAccessToken: Failed ${response.status}`);
+        logToFile(`Token refresh failed: ${response.status}`);
         if (response.status === 401 || response.status === 403) {
           throw new AuthenticationError(`Token refresh failed (${response.status})`);
         }
@@ -104,10 +109,9 @@ export class ApiQuotaPoller {
       }
 
       const data = (await response.json()) as TokenResponse;
-      // console.log('refreshAccessToken: Success');
       return data.access_token;
     } catch (e: any) {
-      console.warn('refreshAccessToken: Error', e.message);
+      logToFile(`Token refresh error: ${e.message}`);
       throw e;
     } finally {
       clearTimeout(timeout);
@@ -115,7 +119,6 @@ export class ApiQuotaPoller {
   }
 
   private async loadCodeAssist(accessToken: string): Promise<LoadCodeAssistResponse> {
-    // console.log('loadCodeAssist: Called');
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
 
@@ -132,10 +135,9 @@ export class ApiQuotaPoller {
       });
 
       if (!response.ok) {
-        console.warn(`loadCodeAssist: Failed ${response.status}`);
+        logToFile(`loadCodeAssist failed: ${response.status}`);
         throw new Error(`loadCodeAssist failed (${response.status})`);
       }
-      // console.log('loadCodeAssist: Success');
       return (await response.json()) as LoadCodeAssistResponse;
     } finally {
       clearTimeout(timeout);
@@ -155,7 +157,6 @@ export class ApiQuotaPoller {
     accessToken: string,
     projectId?: string
   ): Promise<CloudCodeQuotaResponse> {
-    // console.log(`fetchAvailableModels: Called (project=${projectId})`);
     const payload = projectId ? { project: projectId } : {};
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
@@ -173,10 +174,9 @@ export class ApiQuotaPoller {
       });
 
       if (!response.ok) {
-        console.warn(`fetchAvailableModels: Failed ${response.status}`);
+        logToFile(`fetchAvailableModels failed: ${response.status}`);
         throw new Error(`fetchModels failed (${response.status})`);
       }
-      // console.log('fetchAvailableModels: Success');
       return (await response.json()) as CloudCodeQuotaResponse;
     } finally {
       clearTimeout(timeout);
@@ -184,13 +184,11 @@ export class ApiQuotaPoller {
   }
 
   async checkQuota(account: AccountMetadataV3): Promise<ModelQuotaInfo[]> {
-    // console.log(`checkQuota: Called for ${account.email}`);
     try {
       const accessToken = await this.refreshAccessToken(account.refreshToken);
       let projectId = account.projectId || account.managedProjectId;
 
       if (!projectId) {
-        // console.log('checkQuota: Loading Code Assist to get project ID');
         const codeAssist = await this.loadCodeAssist(accessToken);
         projectId = this.extractProjectId(codeAssist.cloudaicompanionProject);
       }
@@ -233,7 +231,7 @@ export class ApiQuotaPoller {
       if (error instanceof AuthenticationError) {
         throw error;
       }
-      console.warn('Failed to check quota via API:', error);
+      logToFile(`Failed to check quota via API: ${error}`);
       return [];
     }
   }
