@@ -1,5 +1,6 @@
 import { QuotaManager } from './manager';
 import { QuotaCacheUpdater } from './quota/QuotaCacheUpdater';
+import { HardLimitDetector } from './rotation/HardLimitDetector';
 import type { PluginConfig } from './types';
 import { translateModelName, formatModelQuotaForToast } from './utils/model-name-translator';
 import fs from 'fs';
@@ -39,6 +40,7 @@ interface Event {
 interface Hooks {
   event?: (input: { event: Event }) => Promise<void>;
   tool?: Record<string, ToolDefinition>;
+  "chat.message"?: (input: any, output: any) => Promise<void>;
 }
 
 type Plugin = (input: PluginInput) => Promise<Hooks>;
@@ -70,6 +72,7 @@ function loadQuotaConfig(): Partial<PluginConfig> {
 export const plugin: Plugin = async (ctx) => {
   const userConfig = loadQuotaConfig();
   const manager = new QuotaManager(userConfig);
+  const detector = new HardLimitDetector(userConfig);
   await manager.initialize();
 
   const cacheUpdater = new QuotaCacheUpdater(manager, IDLE_POLL_INTERVAL_MS);
@@ -78,6 +81,40 @@ export const plugin: Plugin = async (ctx) => {
   logToFile('Autopilot plugin initialized with config');
 
   return {
+    "chat.message": async (_, output) => {
+      const currentModelID = output.message.model.modelID;
+      
+      const modelName = currentModelID.split('/').pop() || currentModelID;
+      
+      logToFile(`Checking model switch for ${modelName}`);
+      
+      try {
+        const result = await detector.checkHardLimit(modelName);
+        
+        if (result.shouldRotate && result.nextModel && result.nextModel !== modelName) {
+          logToFile(`Switching model: ${modelName} -> ${result.nextModel} (Reason: ${result.message})`);
+          
+          output.message.model.modelID = result.nextModel;
+          
+          if (result.nextModel.includes('claude')) {
+            output.message.model.providerID = 'anthropic';
+          } else if (result.nextModel.includes('gemini')) {
+            output.message.model.providerID = 'google';
+          }
+          
+          await ctx.client.tui.showToast({
+            body: {
+              title: 'Automatic Model Switch',
+              message: result.message || `Switched to ${result.nextModel} due to quota.`,
+              variant: 'warning'
+            }
+          });
+        }
+      } catch (err) {
+        logToFile(`Error in chat.message hook: ${err}`);
+      }
+    },
+
     // Event hook - listen for session.idle to trigger quota refresh
     event: async ({ event }) => {
       if (event.type === 'session.idle') {
