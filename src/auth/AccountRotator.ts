@@ -8,7 +8,7 @@ export class AccountRotator {
   private accounts!: AccountMetadataV3[];
   private activeIndex!: number;
   private activeIndexByFamily?: { claude?: number; gemini?: number; antigravity?: number };
-  private logger = getLogger();
+  private logger!: import('../utils/logger').AutopilotLogger;
 
   constructor(
     accounts: AccountMetadataV3[],
@@ -29,6 +29,8 @@ export class AccountRotator {
     } else {
       this.activeIndex = initialIndex;
     }
+
+    this.logger = getLogger();
   }
 
   public getCurrentAccount(): AccountMetadataV3 | null {
@@ -74,7 +76,7 @@ export class AccountRotator {
     }
 
     const currentAccount = this.accounts[this.activeIndex];
-    
+
     if (resetTimeISO) {
       const resetTime = new Date(resetTimeISO);
       if (!Number.isNaN(resetTime.getTime())) {
@@ -113,14 +115,14 @@ export class AccountRotator {
       activeIndex: this.activeIndex,
       activeIndexByFamily: this.activeIndexByFamily
         ? {
-            ...this.activeIndexByFamily,
-            antigravity: this.activeIndex,
-            gemini: this.activeIndex,
-          }
+          ...this.activeIndexByFamily,
+          antigravity: this.activeIndex,
+          gemini: this.activeIndex,
+        }
         : {
-            antigravity: this.activeIndex,
-            gemini: this.activeIndex,
-          },
+          antigravity: this.activeIndex,
+          gemini: this.activeIndex,
+        },
     };
 
     try {

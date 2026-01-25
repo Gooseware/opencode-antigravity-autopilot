@@ -328,7 +328,7 @@ cat ~/.config/opencode/opencode.json
 cat ~/.config/opencode/antigravity-accounts.json
 
 # Test manually
-node -e "const {QuotaManager} = require('opencode-antigravity-autopilot'); const m = new QuotaManager(); m.initialize().then(() => m.getQuotaViaApi().then(console.log));"
+node -e "const {QuotaManager} = require('opencode-antigravity-autopilot'); const m = new QuotaManager(); m.initialize().then(() => m.getQuotaViaApi().then());"
 ```
 
 ### Model Switch Not Working

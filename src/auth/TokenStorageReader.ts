@@ -26,13 +26,14 @@ export class TokenStorageReader {
   private accounts!: AccountMetadataV3[];
   private activeIndex!: number;
   private activeIndexByFamily?: { claude?: number; gemini?: number; antigravity?: number };
-  private logger = getLogger();
+  private logger!: import('../utils/logger').AutopilotLogger;
 
   constructor() {
     if (!(this instanceof TokenStorageReader)) {
       // @ts-ignore
       return new TokenStorageReader();
     }
+    this.logger = getLogger();
     this.accounts = [];
     this.activeIndex = -1;
     this.load();
