@@ -20,6 +20,8 @@ const API_TO_DISPLAY_NAMES: Record<string, string> = {
   'MODEL_GEMINI_3_FLASH_HIGH': 'Gemini 3 Flash (High)',
   'MODEL_GEMINI_2_5_PRO': 'Gemini 2.5 Pro',
   'MODEL_GEMINI_2_5_FLASH': 'Gemini 2.5 Flash',
+  'MODEL_GEMINI_1_5_PRO': 'Gemini 1.5 Pro',
+  'MODEL_GEMINI_1_5_FLASH': 'Gemini 1.5 Flash',
 
   // Claude models
   'MODEL_CLAUDE_4_5_SONNET': 'Claude 4.5 Sonnet',
@@ -27,6 +29,11 @@ const API_TO_DISPLAY_NAMES: Record<string, string> = {
   'MODEL_CLAUDE_4_5_OPUS': 'Claude 4.5 Opus',
   'MODEL_CLAUDE_4_5_OPUS_THINKING': 'Claude 4.5 Opus (Thinking)',
   'MODEL_CLAUDE_3_5_SONNET': 'Claude 3.5 Sonnet',
+  'MODEL_CLAUDE_3_5_SONNET_V2': 'Claude 3.5 Sonnet (v2)',
+  'MODEL_CLAUDE_3_5_HAIKU': 'Claude 3.5 Haiku',
+  'MODEL_CLAUDE_3_OPUS': 'Claude 3 Opus',
+  'MODEL_CLAUDE_3_SONNET': 'Claude 3 Sonnet',
+  'MODEL_CLAUDE_3_HAIKU': 'Claude 3 Haiku',
 
   // GPT models
   'MODEL_OPENAI_GPT_OSS_120B_MEDIUM': 'GPT OSS 120B (Medium)',
@@ -44,22 +51,31 @@ const API_TO_DISPLAY_NAMES: Record<string, string> = {
  * Common model name patterns and their display names
  */
 const MODEL_PATTERNS: Array<{ pattern: RegExp; format: (match: RegExpMatchArray) => string }> = [
-  // gemini-3-pro-low, gemini-3-flash-high, etc.
+  // gemini-3-pro-low, gemini-2.5-flash-high, gemini-1.5-pro, etc.
   {
     pattern: /^gemini-(\d+(?:\.\d+)?)-(\w+)(?:-(low|medium|high))?$/i,
     format: (m) => {
       const version = m[1];
-      const variant = m[2]?.charAt(0).toUpperCase() + m[2]?.slice(1);
-      const tier = m[3] ? ` (${m[3].charAt(0).toUpperCase() + m[3].slice(1)})` : '';
+      const variant = m[2]?.charAt(0).toUpperCase() + m[2]?.slice(1).toLowerCase();
+      const tier = m[3] ? ` (${m[3].charAt(0).toUpperCase() + m[3].slice(1).toLowerCase()})` : '';
       return `Gemini ${version} ${variant}${tier}`;
     },
   },
-  // claude-sonnet-4-5-thinking, claude-opus-4-5, etc.
+  // claude-sonnet-4-5-thinking, claude-opus-4-5, claude-3-5-sonnet, etc.
   {
     pattern: /^claude-(sonnet|opus|haiku)-(\d+)-(\d+)(?:-(thinking))?$/i,
     format: (m) => {
-      const variant = m[1]?.charAt(0).toUpperCase() + m[1]?.slice(1);
+      const variant = m[1]?.charAt(0).toUpperCase() + m[1]?.slice(1).toLowerCase();
       const version = `${m[2]}.${m[3]}`;
+      const thinking = m[4] ? ' (Thinking)' : '';
+      return `Claude ${version} ${variant}${thinking}`;
+    },
+  },
+  {
+    pattern: /^claude-(\d+)-(\d+)-(sonnet|opus|haiku)(?:-(thinking))?$/i,
+    format: (m) => {
+      const version = `${m[1]}.${m[2]}`;
+      const variant = m[3]?.charAt(0).toUpperCase() + m[3]?.slice(1).toLowerCase();
       const thinking = m[4] ? ' (Thinking)' : '';
       return `Claude ${version} ${variant}${thinking}`;
     },
@@ -68,7 +84,7 @@ const MODEL_PATTERNS: Array<{ pattern: RegExp; format: (match: RegExpMatchArray)
   {
     pattern: /^(?:openai-)?gpt-(.+)$/i,
     format: (m) => {
-      const rest = m[1]?.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const rest = m[1]?.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
       return `GPT ${rest}`;
     },
   },
