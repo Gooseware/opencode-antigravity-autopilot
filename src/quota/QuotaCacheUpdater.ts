@@ -2,12 +2,7 @@ import { QuotaManager } from '../manager';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-
-interface QuotaCache {
-  percentage: number;
-  model: string;
-  timestamp: number;
-}
+import { QuotaCache } from '../types';
 
 const LOG_FILE = '/tmp/autopilot.log';
 function logToFile(message: string): void {
@@ -24,12 +19,19 @@ function getQuotaCachePath(): string {
   return path.join(homeDir, '.config', 'opencode', 'quota-cache.json');
 }
 
-export async function writeQuotaToCache(quota: { remainingFraction: number; model?: string }): Promise<void> {
+export async function writeQuotaToCache(quota: { remainingFraction: number; model?: string; resetTime?: string }): Promise<void> {
   try {
+    const percentage = Math.round(quota.remainingFraction * 100);
+    const model = quota.model || 'unknown';
+    const refreshDate = quota.resetTime || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    
     const cache: QuotaCache = {
-      percentage: Math.round(quota.remainingFraction * 100),
-      model: quota.model || 'unknown',
+      percentage,
+      quotaUsed: 100 - percentage,
+      model,
       timestamp: Date.now(),
+      refreshDate,
+      humanReadable: `${percentage}% remaining for ${model}. Quota resets at ${new Date(refreshDate).toLocaleString()}.`,
     };
 
     const cachePath = getQuotaCachePath();
@@ -72,21 +74,8 @@ export class QuotaCacheUpdater {
         return;
       }
 
-      const cache: QuotaCache = {
-        percentage: Math.round(quota.remainingFraction * 100),
-        model: quota.model || 'unknown',
-        timestamp: Date.now(),
-      };
-
-      const cachePath = getQuotaCachePath();
-      const cacheDir = path.dirname(cachePath);
-
-      if (!fs.existsSync(cacheDir)) {
-        fs.mkdirSync(cacheDir, { recursive: true });
-      }
-
-      fs.writeFileSync(cachePath, JSON.stringify(cache, null, 2), 'utf-8');
-      logToFile(`Cache updated: ${cache.percentage}% remaining for ${cache.model}`);
+      await writeQuotaToCache(quota);
+      logToFile(`Cache updated successfully for ${quota.model}`);
     } catch (error) {
       logToFile(`Failed to update quota cache: ${error}`);
     }

@@ -41,6 +41,15 @@ export interface ModelRotationStrategy {
   quotaThreshold: number;
 }
 
+export interface QuotaCache {
+  percentage: number;
+  quotaUsed: number;
+  model: string;
+  timestamp: number;
+  refreshDate: string;
+  humanReadable: string;
+}
+
 export interface PluginConfig {
   quotaThreshold?: number;
   pollIntervalMs?: number;
