@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-01-30
+
+### Added
+- **Highest Availability Selection** - Improved model rotation to select the candidate with the most remaining quota fraction instead of just the first available.
+- **Enhanced Quota Cache** - Added `refreshDate`, `quotaUsed`, and human-readable summaries to the quota cache for better visibility in UIs.
+- **Manual Selection Support** - Added `quota_use_model` and `quota_auto_mode` tools to allow users to lock a specific model while preserving the ability to auto-return to preferred models later.
+- **Auto-Return Logic** - System now intelligently returns to the user's preferred model once its quota has refreshed, if not in manual override mode.
+
+### Fixed
+- **Model Name Translation** - Refined patterns for Gemini 2.5, Gemini 1.5, Claude 3.5, and more to ensure consistent display names.
+
 ## [2.2.8] - 2026-01-24
 
 ### Fixed

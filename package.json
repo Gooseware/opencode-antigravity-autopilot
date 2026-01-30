@@ -1,6 +1,6 @@
 {
   "name": "opencode-antigravity-autopilot",
-  "version": "2.2.10",
+  "version": "2.3.0",
   "description": "Intelligent quota monitoring and model auto-switching for OpenCode with Antigravity. Plugin-based, zero source modifications required.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
