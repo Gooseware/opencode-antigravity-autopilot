@@ -21,6 +21,7 @@ export class QuotaManager {
   private modelSelector!: ModelSelector | null;
   private lspProcess!: { pid: number; csrfToken: string; port: number } | null;
   private lastSelectedModel!: string | null;
+  private isManualSelection: boolean = false;
   private logger!: ReturnType<typeof getLogger>;
 
   // Rate limiting cache
@@ -217,6 +218,15 @@ export class QuotaManager {
     this.logger.info('QuotaManager', 'Account rotated', {
       newAccountEmail: newAccount?.email,
     });
+  }
+
+  setManualSelection(isManual: boolean): void {
+    this.isManualSelection = isManual;
+    this.logger.info('QuotaManager', 'Manual selection mode updated', { isManual });
+  }
+
+  getIsManualSelection(): boolean {
+    return this.isManualSelection;
   }
 
   selectBestModel(): string | null {

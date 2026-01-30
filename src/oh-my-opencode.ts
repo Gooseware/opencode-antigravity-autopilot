@@ -15,13 +15,24 @@ export function createOhMyOpenCodeIntegration(
     async getModelForAgent(agentName: string, preferredModel?: string): Promise<string> {
       const targetModel = preferredModel || config?.defaultModel;
       const quotaThreshold = quotaManager.getQuotaTracker().getThreshold();
+      const isManual = quotaManager.getIsManualSelection();
 
       logger.debug('Integration', 'getModelForAgent called', {
         agentName,
         preferredModel,
         targetModel,
-        quotaThreshold
+        quotaThreshold,
+        isManual
       });
+
+      // If we have a target model and we are NOT in manual mode, 
+      // check if it's available. If it is, use it even if we were using a fallback.
+      if (targetModel && !isManual) {
+        if (quotaManager.getQuotaTracker().isModelAvailable(targetModel)) {
+          logger.info('Integration', 'Target model is available, using it', { targetModel });
+          return targetModel;
+        }
+      }
 
       if (!targetModel) {
         logger.info('Integration', 'No target model, selecting best available');

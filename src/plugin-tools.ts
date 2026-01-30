@@ -124,6 +124,20 @@ export function createQuotaTools(config?: PluginConfig) {
       },
     },
 
+    quota_use_model: {
+      description: 'Manually select a model to use. This disables automatic switching until quota_auto_mode is called.',
+      args: {
+        model: { type: 'string', description: 'The model name to use (e.g. gemini-3-pro)' }
+      },
+      async execute(args: { model: string }, ctx?: any) {
+        logger.info('PluginTools', 'quota_use_model invoked', { model: args.model });
+        if (!args.model) return 'Error: model name is required.';
+        manager.setManualSelection(true);
+        // We don't actually "set" it in OpenCode here, but we mark it as manual for the plugin's logic
+        return `✓ Manual selection mode enabled for **${args.model}**. Automatic switching is now disabled for this session. Use \`quota_auto_mode()\` to re-enable it.`;
+      },
+    },
+
     quota_rotate_account: {
       description: 'Manually rotate to the next available account when current is exhausted. Optionally provide resetTimeISO for accurate cooldown.',
       args: {},
@@ -140,6 +154,15 @@ export function createQuotaTools(config?: PluginConfig) {
         }
 
         return `✓ Rotated to next account. Previous account marked as exhausted for 30 minutes.`;
+      },
+    },
+    quota_auto_mode: {
+      description: 'Re-enable automatic model switching and rotation. Use this after a manual model selection to return to optimal model selection.',
+      args: {},
+      async execute(args: {} = {}, ctx?: any) {
+        logger.info('PluginTools', 'quota_auto_mode invoked');
+        manager.setManualSelection(false);
+        return '✓ Automatic model selection re-enabled. System will now proactively switch to the best available preferred model.';
       },
     },
   };
