@@ -62,24 +62,36 @@ export class QuotaTracker {
   }
 
   getBestAvailableModel(candidates: string[]): string | null {
-    this.logger.debug('QuotaTracker', 'Finding best available model (respecting preference order)', {
+    this.logger.debug('QuotaTracker', 'Finding best available model (highest quota)', {
       candidatesCount: candidates.length,
       candidates,
     });
 
+    let bestModel: string | null = null;
+    let maxQuota = -1;
+
     for (const model of candidates) {
       if (this.isModelAvailable(model)) {
         const state = this.quotaState.get(model);
-        const quotaPercentage = state ? `${(state.quotaFraction * 100).toFixed(1)}%` : 'unknown (assumed healthy)';
+        // Default to 1.0 (100%) if we haven't checked this model yet
+        const quotaFraction = state ? state.quotaFraction : 1.0;
         
-        this.logger.info('QuotaTracker', 'Selected model based on preference order', {
-          model,
-          quotaPercentage,
-        });
-        return model;
+        if (quotaFraction > maxQuota) {
+          maxQuota = quotaFraction;
+          bestModel = model;
+        }
       }
+    }
+
+    if (bestModel) {
+      const state = this.quotaState.get(bestModel);
+      const quotaPercentage = state ? `${(state.quotaFraction * 100).toFixed(1)}%` : 'unknown (assumed healthy)';
       
-      this.logger.debug('QuotaTracker', 'Model unavailable (below threshold), skipping', { model });
+      this.logger.info('QuotaTracker', 'Selected model with highest availability', {
+        model: bestModel,
+        quotaPercentage,
+      });
+      return bestModel;
     }
 
     this.logger.warn('QuotaTracker', 'No available model found among candidates', {
